@@ -448,7 +448,7 @@ namespace lemon {
       data.resize(len);
       int index = 0;
       for (typename CPath::ArcIt it(path); it != INVALID; ++it) {
-        data[index] = it;;
+        data[index] = it;
         ++index;
       }
     }
@@ -460,7 +460,7 @@ namespace lemon {
       int index = len;
       for (typename CPath::RevArcIt it(path); it != INVALID; ++it) {
         --index;
-        data[index] = it;;
+        data[index] = it;
       }
     }
 
@@ -503,7 +503,9 @@ namespace lemon {
 
     Node *first, *last;
 
-    std::allocator<Node> alloc;
+  private:
+    typedef std::allocator<Node> Allocator;
+    typedef std::allocator_traits<std::allocator<Node>> AllocatorTraits;
 
   public:
 
@@ -663,8 +665,8 @@ namespace lemon {
     void clear() {
       while (first != 0) {
         last = first->next;
-        alloc.destroy(first);
-        alloc.deallocate(first, 1);
+        AllocatorTraits::destroy(_allocator, first);
+        _allocator.deallocate(first, 1);
         first = last;
       }
     }
@@ -676,8 +678,8 @@ namespace lemon {
 
     /// \brief Add a new arc before the current path
     void addFront(const Arc& arc) {
-      Node *node = alloc.allocate(1);
-      alloc.construct(node, Node());
+      Node *node = _allocator.allocate(1);
+      AllocatorTraits::construct(_allocator, node, Node());
       node->prev = 0;
       node->next = first;
       node->arc = arc;
@@ -698,8 +700,8 @@ namespace lemon {
       } else {
         last = 0;
       }
-      alloc.destroy(node);
-      alloc.deallocate(node, 1);
+      AllocatorTraits::destroy(_allocator, node);
+      _allocator.deallocate(node, 1);
     }
 
     /// \brief The last arc of the path.
@@ -709,8 +711,8 @@ namespace lemon {
 
     /// \brief Add a new arc behind the current path.
     void addBack(const Arc& arc) {
-      Node *node = alloc.allocate(1);
-      alloc.construct(node, Node());
+      Node *node = _allocator.allocate(1);
+      AllocatorTraits::construct(_allocator, node, Node());
       node->next = 0;
       node->prev = last;
       node->arc = arc;
@@ -731,8 +733,8 @@ namespace lemon {
       } else {
         first = 0;
       }
-      alloc.destroy(node);
-      alloc.deallocate(node, 1);
+      AllocatorTraits::destroy(_allocator, node);
+      _allocator.deallocate(node, 1);
     }
 
     /// \brief Splice a path to the back of the current path.
@@ -847,6 +849,9 @@ namespace lemon {
       }
     }
 
+  private:
+    Allocator _allocator;
+
   };
 
   /// \brief A structure for representing directed paths in a digraph.
@@ -875,7 +880,7 @@ namespace lemon {
     /// \brief Default constructor
     ///
     /// Default constructor
-    StaticPath() : len(0), _arcs(0) {}
+    StaticPath() : _len(0), _arcs(0) {}
 
     /// \brief Copy constructor
     ///
@@ -1003,14 +1008,14 @@ namespace lemon {
     }
 
     /// \brief The length of the path.
-    int length() const { return len; }
+    int length() const { return _len; }
 
     /// \brief Return true when the path is empty.
-    int empty() const { return len == 0; }
+    int empty() const { return _len == 0; }
 
     /// \brief Reset the path to an empty one.
     void clear() {
-      len = 0;
+      _len = 0;
       if (_arcs) delete[] _arcs;
       _arcs = 0;
     }
@@ -1022,7 +1027,7 @@ namespace lemon {
 
     /// \brief The last arc of the path.
     const Arc& back() const {
-      return _arcs[len - 1];
+      return _arcs[_len - 1];
     }
 
 
@@ -1030,8 +1035,8 @@ namespace lemon {
 
     template <typename CPath>
     void build(const CPath& path) {
-      len = path.length();
-      _arcs = new Arc[len];
+      _len = path.length();
+      _arcs = new Arc[_len];
       int index = 0;
       for (typename CPath::ArcIt it(path); it != INVALID; ++it) {
         _arcs[index] = it;
@@ -1041,9 +1046,9 @@ namespace lemon {
 
     template <typename CPath>
     void buildRev(const CPath& path) {
-      len = path.length();
-      _arcs = new Arc[len];
-      int index = len;
+      _len = path.length();
+      _arcs = new Arc[_len];
+      int index = _len;
       for (typename CPath::RevArcIt it(path); it != INVALID; ++it) {
         --index;
         _arcs[index] = it;
@@ -1051,7 +1056,7 @@ namespace lemon {
     }
 
   private:
-    int len;
+    int _len;
     Arc* _arcs;
   };
 
